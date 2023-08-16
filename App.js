@@ -1,32 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button} from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, FlatList, ActivityIndicator} from 'react-native';
 import firebase from './src/firebaseConnection';
+import Listagem from './src/Listagem';
 
 console.disableYellowBox=true;
 
 export default function App(){
   const [nome, setNome] = useState('');
   const [cargo, setCargo] = useState('');
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(()=> {
 
     async function dados(){
 
-      //Criar um (nó)
-      //await firebase.database().ref('tipo').set('Vendedor');
+      await firebase.database().ref('usuarios').on('value', (snapshot)=> {
+        setUsuarios([]);
 
-      //Remove um nó
-      //await firebase.database().ref('tipo').remove();
+        snapshot.forEach((chilItem) => {
+          let data = {
+            key: chilItem.key,
+            nome: chilItem.val().nome,
+            cargo: chilItem.val().cargo
+          };
 
-      // await firebase.database().ref('usuarios').child(3).set({
-      //   nome: 'Jose',
-      //   cargo: 'Programador Junior'
-      // });
+          setUsuarios(oldArray => [...oldArray, data].reverse());
+        })
 
-      // await firebase.database().ref('usuarios').child(3)
-      // .update({
-      //   nome: 'Jose augusto'
-      // })
+        setLoading(false);
+
+      })
 
     }
 
@@ -75,6 +79,21 @@ export default function App(){
       title="Novo funcionario"
       onPress={cadastrar}
       />
+
+      {loading ? 
+      (
+        <ActivityIndicator color="#121212" size={45} />
+      ) :
+      (
+        <FlatList
+        keyExtractor={item => item.key}
+        data={usuarios}
+        renderItem={ ({item}) => ( <Listagem data={item} /> )  }
+        />
+      )
+      }
+
+
     </View>
   );
 }
