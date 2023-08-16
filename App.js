@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, FlatList, ActivityIndicator} from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
 import firebase from './src/firebaseConnection';
 
 console.disableYellowBox=true;
@@ -7,34 +7,41 @@ console.disableYellowBox=true;
 export default function App(){
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [user, setUser] = useState('');
+  const [name, setName] = useState('');
 
 
 
-  async function logar(){
-    await firebase.auth().signInWithEmailAndPassword(email, password)
-    .then( (value) => {
-      alert('Bem-vindo: ' + value.user.email);
-      setUser(value.user.email);
-    })
-    .catch( (error) => {
-        alert('Ops algo deu errado!');
-        return;
-    })
+  async function cadastrar(){
+      await firebase.auth().createUserWithEmailAndPassword(email, password)
+      .then((value)=> {
+          //alert(value.user.uid);
+          firebase.database().ref('usuarios').child(value.user.uid).set({
+            nome: name
+          })
 
-    setEmail('');
-    setPassword('');
+          alert('Usuario criado com sucesso!');
+          setName('');
+          setEmail('');
+          setPassword('');
+      })
+      .catch((error)=>{
+        alert('Algo deu errado!');
+      })
   }
 
 
-  async function logout(){
-    await firebase.auth().signOut();
-    setUser('');
-    alert('Deslgoado com sucesso!');
-  }
 
   return(
     <View style={styles.container}>
+
+      <Text style={styles.texto}>Nome</Text>
+      <TextInput
+      style={styles.input}
+      underlineColorAndroid="transparent"
+      onChangeText={(nome) => setName(nome) }
+      value={name}
+      />
+
       <Text style={styles.texto}>Email</Text>
       <TextInput
       style={styles.input}
@@ -52,28 +59,9 @@ export default function App(){
       />
 
       <Button
-      title="Acessar"
-      onPress={logar}
+      title="Cadastrar"
+      onPress={cadastrar}
       />
-
-        <Text style={{marginTop: 20, marginBottom: 20, fontSize: 23, textAlign: 'center'}}>
-          {user}
-        </Text>
-
-      {user.length > 0 ? 
-      (
-        <Button
-        title="Deslogar"
-        onPress={logout}
-        />
-      ) : 
-      (
-        <Text style={{marginTop: 20, marginBottom: 20, fontSize: 23, textAlign: 'center'}}>
-          Nenhum usuario esta logado
-        </Text>
-      )}
-
-
 
     </View>
   );
