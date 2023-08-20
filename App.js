@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -17,9 +17,12 @@ import firebase from './src/services/firebaseConnection';
 
 export default function App() {
   const [user, setUser] = useState(null);
+
+  const inputRef = useRef(null);
   const [tasks, setTasks] = useState([]);
 
   const [newTask, setNewTask] = useState('')
+  const [key, setKey] = useState('');
   
 
   useEffect(()=> {
@@ -57,6 +60,27 @@ export default function App() {
       return;
     }
 
+    // Usuario quer editar uma tarefa.
+    if(key !== ''){
+      firebase.database().ref('tarefas').child(user).child(key).update({
+        nome: newTask
+      })
+      .then(()=> {
+        const taskIndex = tasks.findIndex( (item) => item.key === key)
+        const taskClone = tasks;
+        taskClone[taskIndex].nome = newTask
+
+        setTasks([...taskClone])
+
+
+      })
+
+      Keyboard.dismiss();
+      setNewTask('');
+      setKey('');
+      return;
+    }
+
     let tarefas = firebase.database().ref('tarefas').child(user);
     let chave = tarefas.push().key;
 
@@ -87,7 +111,9 @@ export default function App() {
   }
 
   function handleEdit(data){
-    console.log("ITEM CLICADO", data)
+    setKey(data.key)
+    setNewTask(data.nome)
+    inputRef.current.focus();
   }
 
 
@@ -104,6 +130,7 @@ export default function App() {
         placeholder="O que vai fazer hoje?"
         value={newTask}
         onChangeText={ (text) =>  setNewTask(text) }
+        ref={inputRef}
       />
       <TouchableOpacity style={styles.buttonAdd} onPress={handleAdd}>
         <Text style={styles.buttonText}>+</Text>
